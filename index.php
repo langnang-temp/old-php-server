@@ -33,7 +33,7 @@ switch ($routeInfo[0]) {
     if ($httpMethod == 'GET' && file_exists(__DIR__ . "/src/views" . $uri)) {
       require_once __DIR__ . "/src/views" . $uri;
     } else {
-      echo "404 Not Found";
+      require_once __DIR__ . "/src/views/404.html";
     }
     // ... 404 Not Found
     break;
