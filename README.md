@@ -1,14 +1,13 @@
 # PHP Server
 
-- `Router` nikic/fast-route
-- `SQL` doctrine/dbal
-- `ApiDoc` zircote/swagger-php
-- `FileSystem` league/flysystem
-- `Request` rmccue/requests
-- `FakeData` fakerphp/faker
-- `FTP` nicolab/php-ftp-client
-
 - `Dependency` [Composer](https://packagist.org/)
+- `Router` [nikic/fast-route](https://packagist.org/packages/nikic/fast-route)
+- `SQL` [doctrine/dbal](https://packagist.org/packages/doctrine/dbal)
+- `ApiDoc` [zircote/swagger-php](https://packagist.org/packages/zircote/swagger-php)
+- `FileSystem` [league/flysystem](https://packagist.org/packages/league/flysystem)
+- `Request` [rmccue/requests](https://packagist.org/packages/rmccue/requests)
+- `FakeData` [fakerphp/faker](https://packagist.org/packages/fakerphp/faker)
+- `FTP` [nicolab/php-ftp-client](https://packagist.org/packages/nicolab/php-ftp-client)
 
 ## Branches
 
