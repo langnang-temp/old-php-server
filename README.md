@@ -8,6 +8,8 @@
 - `FakeData` fakerphp/faker
 - `FTP` nicolab/php-ftp-client
 
+- `Dependency` [Composer](https://packagist.org/)
+
 ## Branches
 
 ```sh
