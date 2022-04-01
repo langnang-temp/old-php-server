@@ -8,6 +8,8 @@ header('Access-Control-Allow-Headers: Authorization, Content-Type, x-xsrf-token,
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+$_ENV = array_merge($_ENV, parse_ini_file(__DIR__ . "/.env", true));
+
 // 配置路由
 $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $router) {
   require_once __DIR__ . "/src/api/index.php";
