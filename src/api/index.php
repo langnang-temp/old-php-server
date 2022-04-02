@@ -11,11 +11,10 @@
  * )
  */
 $router->addGroup("/api", function (FastRoute\RouteCollector $router) {
-  // header('Content-Type: application/json');
-  $router->addRoute("GET", "", function ($data) {
+  $router->addRoute("GET", "", function () {
     $openapi = \OpenApi\Generator::scan(["src/api/"]);
     echo $openapi->toJson();
   });
 
-  // require_once __DIR__."/modules/{}.php";
+  require_once __DIR__ . "/modules/sql.php";
 });

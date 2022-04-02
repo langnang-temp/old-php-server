@@ -47,20 +47,84 @@ switch ($routeInfo[0]) {
   case FastRoute\Dispatcher::FOUND:
     $handler = $routeInfo[1];
     $vars = $routeInfo[2];
-    $data = array(
+    $_ENV['Route'] = array(
       "method" => $httpMethod,
-      "url" => $uri,
-      "get" => $_GET,
-      "post" => $_POST,
+      "path" => $uri,
       "vars" => $vars,
+
     );
+    if (!is_null(json_decode(file_get_contents('php://input'), true))) {
+      $_POST = array_merge($_POST, json_decode(file_get_contents('php://input'), true));
+    }
+    $result = null;
     // ... call $handler with $vars
     if (is_object($handler)) {
-      $handler($data);
+      $result = $handler();
     } else if (is_string($handler) && function_exists($handler)) {
-      call_user_func($handler, $data);
+      $result = call_user_func($handler);
     } else if (is_array($handler) && method_exists($handler[0], $handler[1])) {
-      call_user_func($handler, $data);
+      $result = call_user_func($handler);
     }
     break;
+}
+
+if (
+  !is_null($_ENV['Result']['status'])
+  && sizeof(array_filter(explode(',', $_ENV['Result']['status']), function ($path) {
+    return preg_match($path, $_ENV['Route']['path']);
+  })) > 0
+) {
+  // 输出结果
+  // 结果不存在或为字符串，返回400
+  if (!$result || is_string($result)) {
+    $result = [
+      "status" => 400,
+      "statusText" => $result ? $result : "Error",
+    ];
+  } else if (is_object($result)) {
+    $result = array(
+      "status" => 200,
+      "statusText" => 'Success',
+      "data" => $result,
+    );
+  }
+  // 如果存在状态码
+  else if (isset($result["status"]) && is_numeric($result["status"])) {
+    $status = isset($result["status"]) ? $result["status"] : 400;
+    $statusText = isset($result["statusText"]) ? $result["statusText"] : "";
+    if ($statusText == '') {
+      switch ($status) {
+        case 200:
+          $statusText = "Success";
+          break;
+        default:
+          $statusText = "Error";
+          break;
+      }
+    }
+    $result = array(
+      "status" => $status,
+      "statusText" => $statusText,
+      "data" => $result["data"],
+    );
+  }
+  // 不存在状态码，直接输出200
+  else {
+    // 存在参数data,取data值
+    if (isset($result["data"])) {
+      $result = array(
+        "status" => 200,
+        "statusText" => 'Success',
+        "data" => $result["data"],
+      );
+    } else {
+      $result = array(
+        "status" => 200,
+        "statusText" => 'Success',
+        "data" => $result,
+      );
+    }
+  }
+  header('Content-Type: application/json');
+  echo json_encode(array_filter((array)$result), JSON_UNESCAPED_UNICODE);
 }
