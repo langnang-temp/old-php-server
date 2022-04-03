@@ -10,6 +10,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . "/src/sql/index.php";
 
 $_ENV = array_merge($_ENV, parse_ini_file(__DIR__ . "/.env", true));
+// var_dump(preg_match("/.+/", $_SERVER['REMOTE_ADDR']));
 
 // 配置路由
 $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $router) {
@@ -33,7 +34,7 @@ switch ($routeInfo[0]) {
   case FastRoute\Dispatcher::NOT_FOUND:
     // 未配路由的，且存在在视图目录，自动重定向
     if (substr($uri, -1, 1) == '/') $uri .= "index.html";
-    if ($httpMethod == 'GET' && file_exists(__DIR__ . "/src/views" . $uri)) {
+    if ($httpMethod == 'GET' && file_exists(__DIR__ . "/src/views" . $uri) && pathinfo(__DIR__ . "/src/views" . $uri)['extension']) {
       switch (pathinfo(__DIR__ . "/src/views" . $uri)['extension']) {
         case "css":
           header("Content-type: text/css");
