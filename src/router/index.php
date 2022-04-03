@@ -2,7 +2,7 @@
 
 
 
-
+require_once __DIR__ . "/modules/swagger.php";
 
 autoload_view([__DIR__ . "/../views/"]);
 

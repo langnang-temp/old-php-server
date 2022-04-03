@@ -33,9 +33,16 @@ switch ($routeInfo[0]) {
     // 未配路由的，且存在在视图目录，自动重定向
     if (substr($uri, -1, 1) == '/') $uri .= "index.html";
     if ($httpMethod == 'GET' && file_exists(__DIR__ . "/src/views" . $uri)) {
-      require_once __DIR__ . "/src/views" . $uri;
+      switch (pathinfo(__DIR__ . "/src/views" . $uri)['extension']) {
+        case "css":
+          header("Content-type: text/css");
+          break;
+        default:
+          break;
+      }
+      echo file_get_contents(__DIR__ . "/src/views" . $uri);
     } else {
-      require_once __DIR__ . "/src/views/404.html";
+      echo file_get_contents(__DIR__ . "/src/views/404.html");
     }
     // ... 404 Not Found
     break;
