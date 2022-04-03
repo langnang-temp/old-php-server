@@ -14,7 +14,6 @@
     "league/flysystem": "^2.2",
     "rmccue/requests": "^1.8",
     "fakerphp/faker": "^1.15",
-    "nicolab/php-ftp-client": "^1.6",
-    "theseer/tokenizer": "^1.2"
+    "nicolab/php-ftp-client": "^1.6"
   }
 }

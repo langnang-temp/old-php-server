@@ -8,6 +8,7 @@
 - `Request` [rmccue/requests](https://packagist.org/packages/rmccue/requests)
 - `FakeData` [fakerphp/faker](https://packagist.org/packages/fakerphp/faker)
 - `FTP` [nicolab/php-ftp-client](https://packagist.org/packages/nicolab/php-ftp-client)
+- `XML`
 
 ## Branches
 
