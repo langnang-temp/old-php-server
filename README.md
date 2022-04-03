@@ -2,7 +2,7 @@
 
 - `Dependency` [Composer](https://packagist.org/)
 - `Router` [nikic/fast-route](https://packagist.org/packages/nikic/fast-route)
-- `SQL` [doctrine/dbal](https://packagist.org/packages/doctrine/dbal)
+- `SQL` [doctrine/dbal](https://packagist.org/packages/doctrine/dbal) | [Docs](https://www.doctrine-project.org/projects/doctrine-dbal/en/latest/index.html#)
 - `ApiDoc` [zircote/swagger-php](https://packagist.org/packages/zircote/swagger-php)
 - `FileSystem` [league/flysystem](https://packagist.org/packages/league/flysystem)
 - `Request` [rmccue/requests](https://packagist.org/packages/rmccue/requests)
