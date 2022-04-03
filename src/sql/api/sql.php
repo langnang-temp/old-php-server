@@ -1,6 +1,6 @@
 <?php
 
-$_SQL['api']['sql'] = [
+$_SQLL[pathinfo(__DIR__)['filename']][pathinfo(__FILE__)['filename']] = [
   "select_table_list" => function ($conn) {
     return "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` 
     WHERE `TABLE_SCHEMA` = '{$conn->getParams()['dbname']}'
