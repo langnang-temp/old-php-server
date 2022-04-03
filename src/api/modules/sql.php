@@ -6,9 +6,8 @@
  * )
  */
 
-use LDAP\Result;
 
-$router->addGroup('/sql', function (FastRoute\RouteCollector $router) {
+$router->addGroup('/sql', function (FastRoute\RouteCollector $router) use ($_SQL) {
   $conn = \Doctrine\DBAL\DriverManager::getConnection($_ENV['MySQL']);
   /**
    * @OA\Get(
@@ -21,7 +20,7 @@ $router->addGroup('/sql', function (FastRoute\RouteCollector $router) {
   $router->addRoute("GET", "/connection", function () use ($conn) {
     return $conn;
   });
-  $router->addGroup("/table", function (FastRoute\RouteCollector $router) use ($conn) {
+  $router->addGroup("/table", function (FastRoute\RouteCollector $router) use ($conn, $_SQL) {
     /**
      * @OA\Get(
      *     path="/api/sql/table/list",
@@ -30,12 +29,8 @@ $router->addGroup('/sql', function (FastRoute\RouteCollector $router) {
      *     @OA\Response(response="200", description="")
      * )
      */
-    $router->addRoute("GET", "/list", function () use ($conn) {
-
-      $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` 
-      WHERE `TABLE_SCHEMA` = '{$conn->getParams()['dbname']}'
-        AND `TABLE_TYPE` = 'BASE TABLE'
-      ;";
+    $router->addRoute("GET", "/list", function () use ($conn, $_SQL) {
+      $sql = $_SQL['api']['sql']['select_table_list']($conn);
       $stmt = $conn->prepare($sql);
       $result = $stmt->executeQuery();
       $tables = $result->fetchAllAssociative();
@@ -58,19 +53,15 @@ $router->addGroup('/sql', function (FastRoute\RouteCollector $router) {
      *     @OA\Response(response="200", description="")
      * )
      */
-    $router->addRoute("GET", "/info", function () use ($conn) {
-
-      $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` 
-      WHERE `TABLE_SCHEMA` = '{$conn->getParams()['dbname']}'
-        AND `TABLE_NAME` = '{$_GET['table_name']}'
-      ;";
+    $router->addRoute("GET", "/info", function () use ($conn, $_SQL) {
+      $sql = $_SQL['api']['sql']['select_table_info']($conn);
       $stmt = $conn->prepare($sql);
       $result = $stmt->executeQuery();
       $tables = $result->fetchAllAssociative();
       return $tables;
     });
   });
-  $router->addGroup("/column", function (FastRoute\RouteCollector $router) use ($conn) {
+  $router->addGroup("/column", function (FastRoute\RouteCollector $router) use ($conn, $_SQL) {
     /**
      * @OA\Get(
      *     path="/api/sql/column/list",
@@ -88,11 +79,8 @@ $router->addGroup('/sql', function (FastRoute\RouteCollector $router) {
      *     @OA\Response(response="200", description="")
      * )
      */
-    $router->addRoute("GET", "/list", function () use ($conn) {
-      $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`COLUMNS` 
-      WHERE `TABLE_SCHEMA` = '{$conn->getParams()['dbname']}'
-        AND `TABLE_NAME` = '{$_GET['table_name']}'
-      ;";
+    $router->addRoute("GET", "/list", function () use ($conn, $_SQL) {
+      $sql = $_SQL['api']['sql']['select_column_list']($conn);
       $stmt = $conn->prepare($sql);
       $result = $stmt->executeQuery();
       $tables = $result->fetchAllAssociative();
@@ -124,12 +112,8 @@ $router->addGroup('/sql', function (FastRoute\RouteCollector $router) {
      *     @OA\Response(response="200", description="")
      * )
      */
-    $router->addRoute("GET", "/info", function () use ($conn) {
-      $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`COLUMNS` 
-      WHERE `TABLE_SCHEMA` = '{$conn->getParams()['dbname']}'
-        AND `TABLE_NAME` = '{$_GET['table_name']}'
-        AND `COLUMN_NAME` = '{$_GET['column_name']}'
-      ;";
+    $router->addRoute("GET", "/info", function () use ($conn, $_SQL) {
+      $sql = $_SQL['api']['sql']['select_column_info']($conn);
       $stmt = $conn->prepare($sql);
       $result = $stmt->executeQuery();
       $tables = $result->fetchAllAssociative();

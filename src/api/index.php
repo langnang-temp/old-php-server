@@ -1,5 +1,5 @@
 <?php
-
+global $_SQL;
 /**
  * @OA\Info(
  *     description="php-server-apis",
@@ -10,7 +10,7 @@
  *     ),
  * )
  */
-$router->addGroup("/api", function (FastRoute\RouteCollector $router) {
+$router->addGroup("/api", function (FastRoute\RouteCollector $router) use ($_SQL) {
   $router->addRoute("GET", "", function () {
     $openapi = \OpenApi\Generator::scan(["src/api/"]);
     echo $openapi->toJson();

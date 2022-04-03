@@ -7,6 +7,7 @@ header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Headers: Authorization, Content-Type, x-xsrf-token, x_csrftoken, Cache-Control, X-Requested-With');
 
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . "/src/sql/index.php";
 
 $_ENV = array_merge($_ENV, parse_ini_file(__DIR__ . "/.env", true));
 
