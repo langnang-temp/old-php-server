@@ -9,6 +9,7 @@
 
 $router->addGroup('/sql', function (FastRoute\RouteCollector $router) use ($_SQL) {
   $conn = \Doctrine\DBAL\DriverManager::getConnection($_ENV['MySQL']);
+  $_SQL['$self'] = $_SQL[pathinfo(dirname(__DIR__))['filename']][pathinfo(__FILE__)['filename']];
   /**
    * @OA\Get(
    *     path="/api/sql/connection",
@@ -30,11 +31,16 @@ $router->addGroup('/sql', function (FastRoute\RouteCollector $router) use ($_SQL
      * )
      */
     $router->addRoute("GET", "/list", function () use ($conn, $_SQL) {
-      $sql = $_SQL['api']['sql']['select_table_list']($conn);
-      $stmt = $conn->prepare($sql);
-      $result = $stmt->executeQuery();
-      $tables = $result->fetchAllAssociative();
-      return $tables;
+      return [
+        "rows" => $conn->fetchAllAssociative(call_user_func_array(
+          $_SQL['$self']['select_table_list'],
+          get_defined_vars()
+        )),
+        "total" => (int)$conn->fetchOne(call_user_func_array(
+          $_SQL['$self']['select_table_count'],
+          get_defined_vars()
+        ))
+      ];
     });
     /**
      * @OA\Get(
@@ -54,11 +60,10 @@ $router->addGroup('/sql', function (FastRoute\RouteCollector $router) use ($_SQL
      * )
      */
     $router->addRoute("GET", "/info", function () use ($conn, $_SQL) {
-      $sql = $_SQL['api']['sql']['select_table_info']($conn);
-      $stmt = $conn->prepare($sql);
-      $result = $stmt->executeQuery();
-      $tables = $result->fetchAllAssociative();
-      return $tables;
+      return $conn->fetchAllAssociative(call_user_func_array(
+        $_SQL['$self']['select_table_info'],
+        get_defined_vars()
+      ));
     });
   });
   $router->addGroup("/column", function (FastRoute\RouteCollector $router) use ($conn, $_SQL) {
@@ -80,11 +85,16 @@ $router->addGroup('/sql', function (FastRoute\RouteCollector $router) use ($_SQL
      * )
      */
     $router->addRoute("GET", "/list", function () use ($conn, $_SQL) {
-      $sql = $_SQL['api']['sql']['select_column_list']($conn);
-      $stmt = $conn->prepare($sql);
-      $result = $stmt->executeQuery();
-      $tables = $result->fetchAllAssociative();
-      return $tables;
+      return [
+        "rows" => $conn->fetchAllAssociative(call_user_func_array(
+          $_SQL['$self']['select_column_list'],
+          get_defined_vars()
+        )),
+        "total" => (int)$conn->fetchOne(call_user_func_array(
+          $_SQL['$self']['select_column_count'],
+          get_defined_vars()
+        ))
+      ];
     });
     /**
      * @OA\Get(
@@ -113,11 +123,10 @@ $router->addGroup('/sql', function (FastRoute\RouteCollector $router) use ($_SQL
      * )
      */
     $router->addRoute("GET", "/info", function () use ($conn, $_SQL) {
-      $sql = $_SQL['api']['sql']['select_column_info']($conn);
-      $stmt = $conn->prepare($sql);
-      $result = $stmt->executeQuery();
-      $tables = $result->fetchAllAssociative();
-      return $tables;
+      return $conn->fetchAllAssociative(call_user_func_array(
+        $_SQL['$self']['select_column_info'],
+        get_defined_vars()
+      ));
     });
   });
 });
