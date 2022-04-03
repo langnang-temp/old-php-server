@@ -21,4 +21,3 @@ $_SQL['$'] = [
 ];
 $_SQL['api'] = [];
 require_once __DIR__ . "/api/sql.php";
-require_once __DIR__ . "/api/typecho.php";
