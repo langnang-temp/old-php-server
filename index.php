@@ -10,8 +10,12 @@ require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . "/src/sql/index.php";
 
 $_ENV = array_merge($_ENV, parse_ini_file(__DIR__ . "/.env", true));
-// var_dump(preg_match("/.+/", $_SERVER['REMOTE_ADDR']));
-
+foreach ($_ENV['Environment'] ?: [] as $key => $name) {
+  if ($name == $_SERVER['SERVER_NAME']) {
+    $_ENV = array_merge($_ENV, parse_ini_file(__DIR__ . "/.env.{$key}", true));
+    break;
+  }
+}
 // 配置路由
 $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $router) {
   require_once __DIR__ . "/src/api/index.php";
