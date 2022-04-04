@@ -1,6 +1,12 @@
 <?
 
 /**
+ * @OA\Info(
+ *     version="0.0.0",
+ *     title="SQL APIs",
+ * )
+ */
+/**
  * @OA\Tag(
  *     name="sql",
  * )

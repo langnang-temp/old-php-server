@@ -26,20 +26,33 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $rou
 $httpMethod = $_SERVER['REQUEST_METHOD'];
 $uri = $_SERVER['REQUEST_URI'];
 
+if (substr($uri, 0, 2) !== '/?') {
+  header("Location:/?{$uri}");
+}
+$uri = substr($uri, 2);
 // Strip query string (?foo=bar) and decode URI
-if (false !== $pos = strpos($uri, '?')) {
+if (false !== $pos = strpos($uri,  '?')) {
   $uri = substr($uri, 0, $pos);
 }
 $uri = rawurldecode($uri);
 
 $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 
+$result = null;
+
 switch ($routeInfo[0]) {
   case FastRoute\Dispatcher::NOT_FOUND:
     // 未配路由的，且存在在视图目录，自动重定向
-    if (substr($uri, -1, 1) == '/') $uri .= "index.html";
+    if (substr($uri, -1, 1) == '/') {
+      if (file_exists(__DIR__ . "/src/views" . $uri . "index.html")) $uri .= "index.html";
+      else if (file_exists(__DIR__ . "/src/views" . $uri . "index.php")) $uri .= "index.php";
+    }
     if ($httpMethod == 'GET' && file_exists(__DIR__ . "/src/views" . $uri) && pathinfo(__DIR__ . "/src/views" . $uri)['extension']) {
       switch (pathinfo(__DIR__ . "/src/views" . $uri)['extension']) {
+        case "php":
+          require_once __DIR__ . "/src/views" . $uri;
+          return;
+          break;
         case "css":
           header("Content-type: text/css");
           break;
@@ -64,12 +77,13 @@ switch ($routeInfo[0]) {
       "method" => $httpMethod,
       "path" => $uri,
       "vars" => $vars,
-
     );
+    if (sizeof($_GET) > 0) {
+      $_GET[substr(array_key_first($_GET), strlen($uri) + 1)] = $_GET[array_key_first($_GET)];
+    }
     if (!is_null(json_decode(file_get_contents('php://input'), true))) {
       $_POST = array_merge($_POST, json_decode(file_get_contents('php://input'), true));
     }
-    $result = null;
     // ... call $handler with $vars
     if (is_object($handler)) {
       $result = $handler();
