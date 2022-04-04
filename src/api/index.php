@@ -4,9 +4,12 @@ global $_SQL;
 $router->addGroup("/api", function (FastRoute\RouteCollector $router) use ($_SQL) {
   $router->addRoute("GET", "", function () {
     $urls = array_merge(
-      [
-        "api/sql" => "src/api/modules/sql",
-      ],
+      array_reduce([
+        'sql'
+      ], function ($total, $name) {
+        $total["api/{$name}"] = "src/api/modules/{$name}";
+        return $total;
+      }),
       array_reduce([
         'misc', 'object', 'openapi-spec', 'petstore-3.0', 'petstore.swagger.io', 'schema-query-parameter-processor', 'swagger-spec/petstore', 'swagger-spec/petstore-simple', 'swagger-spec/petstore-with-external-docs', 'using-interfaces', 'using-refs', 'using-traits'
       ], function ($total, $name) {
