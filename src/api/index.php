@@ -11,7 +11,7 @@ $router->addGroup("/api", function (FastRoute\RouteCollector $router) use ($_SQL
         return $total;
       }),
       array_reduce([
-        'misc', 'object', 'openapi-spec', 'petstore-3.0', 'petstore.swagger.io', 'schema-query-parameter-processor', 'swagger-spec/petstore', 'swagger-spec/petstore-simple', 'swagger-spec/petstore-with-external-docs', 'using-interfaces', 'using-refs', 'using-traits'
+        'langnang', 'misc', 'object', 'openapi-spec', 'petstore-3.0', 'petstore.swagger.io', 'schema-query-parameter-processor', 'swagger-spec/petstore', 'swagger-spec/petstore-simple', 'swagger-spec/petstore-with-external-docs', 'using-interfaces', 'using-refs', 'using-traits'
       ], function ($total, $name) {
         $total["example/{$name}"] = "src/views/swagger/examples/{$name}";
         return $total;
