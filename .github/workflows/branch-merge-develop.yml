@@ -6,7 +6,7 @@ name: Branch Merge to Develop
 on:
   push:
     branches:
-      - "@langnang-temp/php"
+      - "@langnang-temp/php-serve"
 jobs:
   sync-branch:
     runs-on: ubuntu-latest
@@ -16,6 +16,6 @@ jobs:
       - name: Merge Branch
         uses: devmasx/merge-branch@master
         with:
-          from_branch: "@langnang-temp/php"
+          from_branch: "@langnang-temp/php-serve"
           target_branch: "develop"
           github_token: ${{ github.GITHUB_TOKEN }}
