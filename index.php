@@ -26,10 +26,10 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $rou
 $httpMethod = $_SERVER['REQUEST_METHOD'];
 $uri = $_SERVER['REQUEST_URI'];
 
-if (substr($uri, 0, 2) !== '/?') {
-  header("Location:/?{$uri}");
-}
-$uri = substr($uri, 2);
+// if (substr($uri, 0, 2) !== '/?') {
+//   header("Location:/?{$uri}");
+// }
+// $uri = substr($uri, 2);
 // Strip query string (?foo=bar) and decode URI
 if (false !== $pos = strpos($uri,  '?')) {
   $uri = substr($uri, 0, $pos);
