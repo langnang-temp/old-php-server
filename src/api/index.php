@@ -35,19 +35,19 @@ $router->addGroup("/api", function (FastRoute\RouteCollector $router) use ($_SQL
     }
   });
   $router->addRoute('GET', '/users', function () {
-    return $_ENV;
+    return _get('route_vars');
   });
   // {id} must be a number (\d+)
   $router->addRoute('GET', '/user/{id:\d+}',  function () {
-    return $_ENV;
+    return _get('route_vars');
   });
   // The /{title} suffix is optional
   $router->addRoute('GET', '/articles/{id:\d+}[/{title}]',  function () {
-    return $_ENV;
+    return _get('route_vars');
   });
   // Matches /user/foo/bar as well
   $router->addRoute('GET', '/user/{name:.+}', function () {
-    return $_ENV;
+    return _get('route_vars');
   });
   require_once __DIR__ . "/modules/sql/index.php";
 });

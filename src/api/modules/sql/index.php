@@ -14,7 +14,7 @@
 
 
 $router->addGroup('/sql', function (FastRoute\RouteCollector $router) use ($_SQL) {
-  $conn = \Doctrine\DBAL\DriverManager::getConnection($_ENV['MySQL']);
+  $conn = \Doctrine\DBAL\DriverManager::getConnection(_get('db'));
   $_SQL['$self'] = $_SQL[pathinfo(dirname(__DIR__))['filename']][pathinfo(__FILE__)['filename']];
   /**
    * @OA\Get(

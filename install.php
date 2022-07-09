@@ -5,9 +5,19 @@ if (file_exists(__DIR__ . '/config.inc.php')) http_response_code(404);
 <?php
 define('__APP_NAME__', 'PhpServer');
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/modules/autoload.php';
 $excp; // 错误实例
 // 默认程序配置信息,若存在 POST 数据，则更新为 POST 数据
 $config = [
+  'app_config' => [
+    'name' => __APP_NAME__,
+  ], // 应用配置
+  'route_config' => [
+    'rootPath' => isset($_POST['routeRootPath']) ? $_POST['routeRootPath'] : '/?',
+  ], // 路由配置
+  'api_config' => [], // 接口配置
+  'view_config' => [], // 视图配置
+  'proxy_config' => [], // 代理配置
   'storage_config' => [
     'type' => isset($_POST['storageType']) ? $_POST['storageType'] : 'db',
     'path' => isset($_POST['storagePath']) ? $_POST['storagePath'] : '/storage/',
@@ -189,76 +199,15 @@ $tables = [
   INSERT INTO `{$config['db_config']['dbname']}`.`{$config['db_config']['prefix']}options` (`name`, `user`, `value`) VALUES ('allowXmlRpc', 0, '2');
   "
 ];
-
-/*
-// 检测是否存在配置文件
-if (!file_exists(__DIR__ . '/config.inc.php')) :
-// 若不存在配置文件
-// 除介绍页及配置页，其余页面禁止进入
-// if ($_SERVER['QUERY_STRING'] != '' && !isset($_GET['config'])) :
-// 默认进入介绍页
-// header('Location: ./install.php');
-// endif;
-else :
-  // 若存在配置文件
-  // 读取配置信息，与默认配置信息合并
-  $config = array_merge($config, require_once __DIR__ . '/config.inc.php');
-  // 校验配置信息是否正确
-  $tables = array_map(function ($value) use ($config) {
-    return $config['db_config']['prefix'] . $value;
-  }, ['users', 'metas', 'contents', 'fields', 'comments', 'options']);
-  try {
-    $conn = \Doctrine\DBAL\DriverManager::getConnection($config['db_config']);
-    // 测试连接
-    $count = (int)$conn->fetchOne("SELECT COUNT(*) FROM	information_schema.TABLES WHERE	TABLE_SCHEMA = '{$config['db_config']['dbname']}' AND TABLE_NAME IN (" . "'" . implode("','", $tables) . "'" . ");");
-    // 存在对应数据表
-    if ($count == sizeof($tables)) :
-      // 若当前页面未处于安装页，则跳转至安装页
-      $_SERVER['QUERY_STRING'] == 'start&has_old' ?: header('Location: ./install.php?start&has_old');
-      throw new Exception('start&has_old');
-    // 不存在对应数据表
-    else :
-      // 若当前页面未处于安装页，则跳转至安装页
-      $_SERVER['QUERY_STRING'] == 'start&no_old' ?: header('Location: ./install.php?start&no_old');
-      throw new Exception('start&no_old');
-    // 新增数据表
-    endif;
-  } catch (Exception $e) {
-    // 校验失败
-    $excp = $e;
-    // var_dump($e->getMessage());
-    // switch ($e->getMessage()):
-    //   case "start&has_old":
-    //     var_dump($_SERVER);
-    //     var_dump($_SERVER['QUERY_STRING']);
-    //     // return $_SERVER['QUERY_STRING'] == 'start&has_old' ?: header('Location: ./install.php?start&has_old');
-    //   default:
-    //     // isset($_GET['config']) ?: header('Location: ./install.php?config');
-    //     break;
-    // endswitch;
-    // var_dump($e->getMessage());
-    // 若当前页面未处于配置页，则跳转至配置页
-    // isset($_GET['config']) ?: header('Location: ./install.php?config');
-  }
-  // 校验数据表名称&结构
-  // var_dump($count);
-  // 若配置信息正确
-  if (empty($excp)) :
-    // 拒绝请求
-    http_response_code(404);
-  endif;
-endif;
-*/
-
-// 配置页接受数据并更新配置数据
+// ?config: 配置页接受数据并更新配置数据
 if (isset($_GET['config'])) :
   !isset($_GET['storageType']) ?: ($config['storage_config']['type'] = $_GET['storageType']); // 更新数据存储类型
   !isset($_GET['dbDriver']) ?: ($config['db_config']['driver'] = $_GET['dbDriver']); // 更新适配器
   $action = 'config';
   // [POST]?config: 验证配置信息
-  if ($_SERVER['REQUEST_METHOD'] == 'POST' && $config['storage_config']['type'] == 'db') :
+  if ($_SERVER['REQUEST_METHOD'] == 'POST' && _get('storage_type') == 'db') :
     try {
-      $conn = \Doctrine\DBAL\DriverManager::getConnection($config['db_config']);
+      $conn = \Doctrine\DBAL\DriverManager::getConnection(_get('db'));
       // 测试连接
       $count = (int)$conn->fetchOne("SELECT COUNT(*) FROM	information_schema.TABLES WHERE	TABLE_SCHEMA = '{$config['db_config']['dbname']}' AND TABLE_NAME IN (" . "'" . implode(
         "','",
@@ -276,85 +225,54 @@ if (isset($_GET['config'])) :
     }
   else : $action = "start";
   endif;
-// 数据库连接成功
-// if (empty($excp)) :
-//   // 写入配置文件
-//   $config_content = "<?php return array(\n";
-//   foreach ($config as $key => $value) :
-//     if (is_array($value)) :
-//       $config_content .= "\t'{$key}' => array(\n";
-//       foreach ($value as $child_key => $child_value) :
-//         $config_content .= "\t\t'{$child_key}' => '{$child_value}',\n";
-//       endforeach;
-//       $config_content .= "\t),\n";
-//     else :
-//       $config_content .= "\t'{$key}' => '{$value}',\n";
-//     endif;
-//   endforeach;
-//   $config_content .= ");";
-//   file_put_contents(__DIR__ . "/config.inc.php", $config_content);
-//   // 跳转至安装页
-// header('Location: ./install.php?start');
-// endif;
 endif;
-
-if (isset($_GET['start'])) :
+// ?start: 安装页
+if (isset($_GET['start']) && !isset($_GET['has_old'])) :
   $action = 'finish';
-  if (!isset($_GET['has_old'])) :
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && $config['storage_config']['type'] == 'db') :
-      try {
-        $conn = \Doctrine\DBAL\DriverManager::getConnection($config['db_config']);
-        $sql = "";
-        // 删除原有数据表
-        // if (isset($_POST['delete'])) :
-        $sql .= "DROP TABLE IF EXISTS " . implode(
-          ", ",
-          array_map(function ($value) use ($config) {
-            return $config['db_config']['prefix'] . $value;
-          }, array_keys($tables))
-        ) . ";\n\n";
-        // endif;
-        // 创建对应数据表&插入数据
-        $sql .= implode("\n\n", array_values($tables));
-        $conn->executeStatement($sql);
-      } catch (Exception $e) {
-        // 连接失败
-        $excp = $e;
-        $action = 'start';
-      }
-    endif;
+  if ($_SERVER['REQUEST_METHOD'] == 'POST' && _get('storage_type') == 'db') :
+    try {
+      $conn = \Doctrine\DBAL\DriverManager::getConnection($config['db_config']);
+      $sql = "";
+      // 删除原有数据表
+      // if (isset($_POST['delete'])) :
+      $sql .= "DROP TABLE IF EXISTS " . implode(
+        ", ",
+        array_map(function ($value) use ($config) {
+          return $config['db_config']['prefix'] . $value;
+        }, array_keys($tables))
+      ) . ";\n\n";
+      // endif;
+      // 创建对应数据表&插入数据
+      $sql .= implode("\n\n", array_values($tables));
+      $conn->executeStatement($sql);
+    } catch (Exception $e) {
+      // 连接失败
+      $excp = $e;
+      $action = 'start';
+    }
   endif;
 endif;
+// ?finish 完成页
 if (isset($_GET['finish'])) :
-  // 写入配置文件
-  $config_content = "<?php return array(\n";
-  foreach ($config as $key => $value) :
-    if (is_array($value)) :
-      $config_content .= "\t'{$key}' => array(\n";
-      foreach ($value as $child_key => $child_value) :
-        $config_content .= "\t\t'{$child_key}' => '{$child_value}',\n";
-      endforeach;
-      $config_content .= "\t),\n";
-    else :
-      $config_content .= "\t'{$key}' => '{$value}',\n";
-    endif;
-  endforeach;
-  $config_content .= ");";
-  file_put_contents(__DIR__ . "/config.inc.php", $config_content);
+  if ($_SERVER['REQUEST_METHOD'] == 'POST') :
+    // 写入配置文件
+    $config_content = "<?php return array(\n";
+    foreach ($config as $key => $value) :
+      if (is_array($value)) :
+        $config_content .= "\t'{$key}' => array(\n";
+        foreach ($value as $child_key => $child_value) :
+          $config_content .= "\t\t'{$child_key}' => '{$child_value}',\n";
+        endforeach;
+        $config_content .= "\t),\n";
+      else :
+        $config_content .= "\t'{$key}' => '{$value}',\n";
+      endif;
+    endforeach;
+    $config_content .= ");";
+    file_put_contents(__DIR__ . "/config.inc.php", $config_content);
+  endif;
 endif;
-// else :
-//   $config = require_once __DIR__ . '/config.inc.php';
-//   try {
-//     $conn = \Doctrine\DBAL\DriverManager::getConnection($config['db_config']);
-//     // 测试连接
-//     $stmt = $conn->query("SHOW TABLES");
-//   } catch (Exception $e) {
-//     $excp = $e;
-//   }
-//   if (empty($excp)) :
-//   // exit;
-//   endif;
-// endif;
+
 ?>
 
 
@@ -365,7 +283,7 @@ endif;
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?php echo __APP_NAME__; ?> 安装程序</title>
+  <title><?php echo _get('app_name'); ?> 安装程序</title>
   <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
@@ -412,12 +330,26 @@ endif;
       border-radius: 50%;
       text-align: center;
     }
+
+    .form-group .checkbox {
+      margin-left: 20px;
+    }
+
+    .form-control[type='checkbox'] {
+      width: 20px;
+      height: 20px;
+    }
+
+    .form-control[type='checkbox']+p {
+      margin-left: 10px;
+      line-height: 26px;
+    }
   </style>
 </head>
 
 <body>
   <div class="jumbotron text-center">
-    <h1><strong><?php echo __APP_NAME__; ?></strong></h1>
+    <h1><strong><?php echo _get('app_name'); ?></strong></h1>
     <ol>
       <li <?php if (!isset($_GET['finish']) && !isset($_GET['start']) && !isset($_GET['config'])) : ?> class="active" <?php endif; ?>><span>1</span>欢迎使用</li>
       <li <?php if (isset($_GET['config'])) : ?> class="active" <?php endif; ?>><span>2</span>初始化配置</li>
@@ -430,13 +362,13 @@ endif;
       <div class="row">
         <div class="col-md-8 col-md-offset-2">
           <form method="post" action="?config">
-            <h1>欢迎使用 <?php echo __APP_NAME__; ?></h1>
+            <h1>欢迎使用 <?php echo _get('app_name'); ?></h1>
             <div class="form-group">
               <h3>安装说明</h3>
               <p><strong>本安装程序将自动检测服务器环境是否符合最低配置需求. 如果不符合, 将在上方出现提示信息, 请按照提示信息检查您的主机配置. 如果服务器环境符合要求, 将在下方出现 "开始下一步" 的按钮, 点击此按钮即可一步完成安装.</strong></p>
               <h3>许可及协议</h3>
-              <p><?php echo __APP_NAME__; ?> 基于 <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a> 协议发布, 我们允许用户在 Apache License 2.0 协议许可的范围内使用, 拷贝, 修改和分发此程序. 在 Apache License 2.0 许可的范围内，您可以自由地将其用于商业以及非商业用途.</p>
-              <p><?php echo __APP_NAME__; ?> 软件由其社区提供支持, 核心开发团队负责维护程序日常开发工作以及新特性的制定. 如果您遇到使用上的问题, 程序中的 BUG, 以及期许的新功能, 欢迎您在社区中交流或者直接向我们贡献代码. 对于贡献突出者, 他的名字将出现在贡献者名单中.</p>
+              <p><?php echo _get('app_name'); ?> 基于 <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a> 协议发布, 我们允许用户在 Apache License 2.0 协议许可的范围内使用, 拷贝, 修改和分发此程序. 在 Apache License 2.0 许可的范围内，您可以自由地将其用于商业以及非商业用途.</p>
+              <p><?php echo _get('app_name'); ?> 软件由其社区提供支持, 核心开发团队负责维护程序日常开发工作以及新特性的制定. 如果您遇到使用上的问题, 程序中的 BUG, 以及期许的新功能, 欢迎您在社区中交流或者直接向我们贡献代码. 对于贡献突出者, 他的名字将出现在贡献者名单中.</p>
             </div>
             <div class="form-group">
               <button type="submit" class="btn btn-primary">我准备好了, 开始下一步 »</a>
@@ -453,20 +385,36 @@ endif;
             <div style="<?php echo !isset($_GET['start']) ?: 'display: none;' ?>">
               <h1>确认您的配置</h1>
               <div>
+                <h3>路由配置</h3>
+                <div class="form-group">
+                  <label for="routeRootPath">是否开启伪静态</label>
+                  <div class="checkbox">
+                    <input class="form-control" type="checkbox" name="routeRootPath" value="" <?php echo _get('route_rootPath') == '' ? "checked" : NULL; ?> />
+                    <p class="text-muted">去掉地址栏中的 "/?/"</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3>应用程序接口配置</h3>
+              </div>
+              <div>
+                <h3>视图配置</h3>
+              </div>
+              <div>
                 <h3>数据存储配置</h3>
                 <div class="form-group">
                   <label for="storageType">存储类型</label>
                   <select class="form-control" name="storageType" id="storageType">
-                    <option value="db" <?php echo  $config['storage_config']['type'] == 'db' ? "selected" : NULL; ?>>数据库</option>
-                    <option value="file" <?php echo $config['storage_config']['type'] == 'file' ? "selected" : NULL; ?>>本地目录</option>
+                    <option value="db" <?php echo _get('storage_type') == 'db' ? "selected" : NULL; ?>>数据库</option>
+                    <option value="file" <?php echo _get('storage_type') == 'file' ? "selected" : NULL; ?>>本地目录</option>
                   </select>
                 </div>
-                <div class="form-group <?php echo $config['storage_config']['type'] == 'file' ? NULL : 'hidden' ?>">
+                <div class="form-group <?php echo _get('storage_type') == 'file' ? NULL : 'hidden' ?>">
                   <label for="storagePath">存储路径</label>
-                  <input class="form-control" name="storagePath" type="text" value="<?php echo $config['storage_config']['path']; ?>" />
+                  <input class="form-control" name="storagePath" type="text" value="<?php echo _get('storage_path') ?>" />
                 </div>
               </div>
-              <div class="<?php echo $config['storage_config']['type'] == 'db' ? NULL : 'hidden' ?>">
+              <div class="<?php echo _get('storage_type') == 'db' ? NULL : 'hidden' ?>">
                 <h3>数据库配置</h3>
                 <?php if (!empty($excp) && !empty($_POST)) : ?>
                   <div class="alert alert-danger" role="alert">
@@ -476,8 +424,8 @@ endif;
                 <div class="form-group">
                   <label for="dbDriver">数据库适配器</label>
                   <select class="form-control" name="dbDriver" id="dbDriver">
-                    <option value="pdo_mysql" <?php echo  $config['db_config']['driver'] == 'pdo_mysql' ? "selected" : NULL; ?>>Pdo 驱动 Mysql 适配器</option>
-                    <option value="pdo_sqlite" <?php echo $config['db_config']['driver'] == 'pdo_sqlite' ? "selected" : NULL; ?>>Pdo 驱动 SQLite 适配器 (SQLite 3.x)</option>
+                    <option value="pdo_mysql" <?php echo  _get('db_driver') == 'pdo_mysql' ? "selected" : NULL; ?>>Pdo 驱动 Mysql 适配器</option>
+                    <option value="pdo_sqlite" <?php echo _get('db_driver') == 'pdo_sqlite' ? "selected" : NULL; ?>>Pdo 驱动 SQLite 适配器 (SQLite 3.x)</option>
                     <!-- <option value="mysqli"></option> -->
                     <!-- <option value="pdo_pgsql"></option> -->
                     <!-- <option value="pdo_sqlsrv"></option> -->
@@ -487,55 +435,55 @@ endif;
                 </div>
                 <div class="form-group">
                   <label for="dbHost">数据库地址</label>
-                  <input class="form-control" type="text" class="text" name="dbHost" id="dbHost" value="<?php echo $config['db_config']['host']; ?>">
+                  <input class="form-control" type="text" class="text" name="dbHost" id="dbHost" value="<?php echo _get('db_host') ?>">
                   <p class="text-muted">您可能会使用 "localhost"</p>
                 </div>
                 <div class="form-group">
                   <label for="dbPort">数据库端口</label>
-                  <input class="form-control" type="text" class="text" name="dbPort" id="dbPort" value="<?php echo $config['db_config']['port']; ?>">
+                  <input class="form-control" type="text" class="text" name="dbPort" id="dbPort" value="<?php echo _get('db_port') ?>">
                   <p class="text-muted">如果您不知道此选项的意义, 请保留默认设置</p>
                 </div>
                 <div class="form-group">
                   <label for="dbUser">数据库用户名</label>
-                  <input class="form-control" type="text" class="text" name="dbUser" id="dbUser" value="<?php echo $config['db_config']['user']; ?>">
+                  <input class="form-control" type="text" class="text" name="dbUser" id="dbUser" value="<?php echo _get('db_user') ?>">
                   <p class="text-muted">您可能会使用 "root"</p>
                 </div>
                 <div class="form-group">
                   <label for="dbPassword">数据库密码</label>
-                  <input class="form-control" type="password" class="text" name="dbPassword" id="dbPassword" value="<?php echo $config['db_config']['password']; ?>">
+                  <input class="form-control" type="password" class="text" name="dbPassword" id="dbPassword" value="<?php echo _get('db_password') ?>">
                 </div>
                 <div class="form-group">
                   <label for="dbDatabase">数据库名</label>
-                  <input class="form-control" type="text" class="text" name="dbDatabase" id="dbDatabase" value="<?php echo $config['db_config']['dbname']; ?>">
+                  <input class="form-control" type="text" class="text" name="dbDatabase" id="dbDatabase" value="<?php echo _get('db_dbname') ?>">
                   <p class="text-muted">请您指定数据库名称</p>
                 </div>
                 <input type="hidden" name="dbCharset" value="utf8">
                 <div class="form-group">
                   <label for="dbPrefix">数据库前缀</label>
-                  <input class="form-control" type="text" class="text" name="dbPrefix" id="dbPrefix" value="<?php echo $config['db_config']['prefix']; ?>">
-                  <p class="text-muted">默认前缀是 "<?php echo strtolower(__APP_NAME__) . "_"; ?>"</p>
+                  <input class="form-control" type="text" class="text" name="dbPrefix" id="dbPrefix" value="<?php echo _get('db_prefix') ?>">
+                  <p class="text-muted">默认前缀是 "<?php echo strtolower(_get('app_name')) . "_"; ?>"</p>
                 </div>
               </div>
               <div>
                 <h3>创建您的管理员帐号</h3>
                 <div class="form-group">
                   <label for="userUrl">网站地址</label>
-                  <input class="form-control" type="text" name="userUrl" id="userUrl" class="text" value="<?php echo $config['admin_config']['url'] ?>">
+                  <input class="form-control" type="text" name="userUrl" id="userUrl" class="text" value="<?php echo _get('admin_url') ?>">
                   <p class="text-muted">这是程序自动匹配的网站路径, 如果不正确请修改它</p>
                 </div>
                 <div class="form-group">
                   <label for="userName">用户名</label>
-                  <input class="form-control" type="text" name="userName" id="userName" class="text" value="<?php echo $config['admin_config']['name'] ?>">
+                  <input class="form-control" type="text" name="userName" id="userName" class="text" value="<?php echo _get('admin_name') ?>">
                   <p class="text-muted">请填写您的用户名</p>
                 </div>
                 <div class="form-group">
                   <label for="userPassword">登录密码</label>
-                  <input class="form-control" type="password" name="userPassword" id="userPassword" class="text" value="<?php echo $config['admin_config']['password'] ?>">
+                  <input class="form-control" type="password" name="userPassword" id="userPassword" class="text" value="<?php echo _get('admin_password') ?>">
                   <p class="text-muted">请填写您的登录密码, 如果留空系统将为您随机生成一个</p>
                 </div>
                 <div class="form-group">
                   <label for="userMail">邮件地址</label>
-                  <input class="form-control" type="text" name="userMail" id="userMail" class="text" value="<?php echo $config['admin_config']['mail'] ?>">
+                  <input class="form-control" type="text" name="userMail" id="userMail" class="text" value="<?php echo _get('admin_mail') ?>">
                   <p class="text-muted">请填写一个您的常用邮箱</p>
                 </div>
               </div>
@@ -569,13 +517,15 @@ endif;
         var storageType = document.config.storageType;
         var dbDriver = document.config.dbDriver;
         storageType.onchange = function() {
-          setTimeout("window.location.href = 'install.php?config&storageType=" + this.value + "'; ", 0);
+          document.config.action = "./install.php?config&storageType=" + this.value;
+          $('button[type="submit"]').click();
         }
         dbDriver.onchange = function() {
-          setTimeout("window.location.href = 'install.php?config&dbDriver=" + this.value + "'; ", 0);
+          document.config.action = "install.php?config&dbDriver=" + this.value;
+          $('button[type="submit"]').click();
         }
       <?php endif ?>
-      <?php if ((isset($_GET['config']) && in_array($action, ['start', 'start&has_old'])) || (isset($_GET['start']) && in_array($action, ['finish']))) : ?>
+      <?php if ((isset($_GET['config']) && sizeof($_GET) == 1 && in_array($action, ['start', 'start&has_old'])) || (isset($_GET['start']) && in_array($action, ['finish']))) : ?>
         $('button[type="submit"]').click();
       <?php endif; ?>
     </script>
@@ -590,27 +540,29 @@ endif;
             </div>
             <div class="alert alert-success" role="alert">
               <ul style="padding-inline-start: 20px;">
-                <li>您的用户名是: <?php echo $config['admin_config']['name'] ?></li>
-                <li>您的密码是: <?php echo $config['admin_config']['password'] ?></li>
+                <li>您的用户名是: <?php echo _get('admin_name') ?></li>
+                <li>您的密码是: <?php echo _get('admin_password') ?></li>
               </ul>
             </div>
             <div class="alert alert-warning" role="alert">
-              参与用户调查, 帮助我们完善产品
+              <a href="#">
+                参与用户调查, 帮助我们完善产品
+              </a>
             </div>
           </form>
           <p>
             您可以将下面两个链接保存到您的收藏夹:
           </p>
           <ul>
-            <li><a href="http://">
+            <li><a href="#">
                 点击这里访问您的控制面板
               </a></li>
-            <li><a href="">
+            <li><a href="#">
                 点击这里查看您的 Blog
               </a></li>
           </ul>
           <p>
-            希望您能尽情享用 <?php echo __APP_NAME__ ?> 带来的乐趣!
+            希望您能尽情享用 <?php echo _get('app_name') ?> 带来的乐趣!
           </p>
         </div>
       </div>

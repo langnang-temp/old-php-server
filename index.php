@@ -1,5 +1,11 @@
 <?php
 
+/** 载入程序配置 */
+if (!file_exists(__DIR__ . '/config.inc.php')) {
+  file_exists(__DIR__ . './install.php') ? header('Location: /install.php') : print('Missing Config File');
+  exit;
+}
+$config = require_once __DIR__ . "/config.inc.php";
 // 允许跨域请求
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, PUT, OPTIONS, PATCH, DELETE');
@@ -7,21 +13,9 @@ header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Headers: Authorization, Content-Type, x-xsrf-token, x_csrftoken, Cache-Control, X-Requested-With');
 
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/modules/autoload.php';
 require_once __DIR__ . "/src/sql/index.php";
 
-/** 载入配置支持 */
-if (!defined('__ROOT_DIR__') && !@include_once 'config.inc.php') {
-  file_exists('./install.php') ? header('Location: install.php') : print('Missing Config File');
-  exit;
-}
-
-$_ENV = array_merge($_ENV, parse_ini_file(__DIR__ . "/.env", true));
-foreach ($_ENV['Environment'] ?: [] as $key => $name) {
-  if ($name == $_SERVER['SERVER_NAME']) {
-    $_ENV = array_merge($_ENV, parse_ini_file(__DIR__ . "/.env.{$key}", true));
-    break;
-  }
-}
 // 配置路由
 $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $router) {
   require_once __DIR__ . "/src/api/index.php";
@@ -32,15 +26,25 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $rou
 $httpMethod = $_SERVER['REQUEST_METHOD'];
 $uri = $_SERVER['REQUEST_URI'];
 
-// if (substr($uri, 0, 2) !== '/?') {
-//   header("Location:/?{$uri}");
-// }
-// $uri = substr($uri, 2);
+if (!empty(_get('route_rootPath'))) :
+  if (substr($uri, 0, strlen(_get('route_rootPath'))) !== _get('route_rootPath')) {
+    header("Location:" . _get('route_rootPath') . "{$uri}");
+  }
+  $uri = substr($uri, strlen(_get('route_rootPath')));
+endif;
+
 // Strip query string (?foo=bar) and decode URI
 if (false !== $pos = strpos($uri,  '?')) {
   $uri = substr($uri, 0, $pos);
 }
 $uri = rawurldecode($uri);
+if (!empty(_get('route_rootPath'))) {
+  $_GET[substr(array_key_first($_GET), strlen($uri) + 1)] = $_GET[array_key_first($_GET)];
+  unset($_GET[array_key_first($_GET)]);
+}
+if (!is_null(json_decode(file_get_contents('php://input'), true))) {
+  $_POST = array_merge($_POST, json_decode(file_get_contents('php://input'), true));
+}
 
 $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 
@@ -68,6 +72,8 @@ switch ($routeInfo[0]) {
       echo file_get_contents(__DIR__ . "/src/views" . $uri);
     } else {
       echo file_get_contents(__DIR__ . "/src/views/404.html");
+      // http_response_code(404);
+      // exit;
     }
     // ... 404 Not Found
     break;
@@ -79,17 +85,13 @@ switch ($routeInfo[0]) {
   case FastRoute\Dispatcher::FOUND:
     $handler = $routeInfo[1];
     $vars = $routeInfo[2];
-    $_ENV['Route'] = array(
+    $config['route_config']['vars'] = array(
       "method" => $httpMethod,
       "path" => $uri,
+      "get" => $_GET,
+      "post" => $_POST,
       "vars" => $vars,
     );
-    if (sizeof($_GET) > 0) {
-      $_GET[substr(array_key_first($_GET), strlen($uri) + 1)] = $_GET[array_key_first($_GET)];
-    }
-    if (!is_null(json_decode(file_get_contents('php://input'), true))) {
-      $_POST = array_merge($_POST, json_decode(file_get_contents('php://input'), true));
-    }
     // ... call $handler with $vars
     if (is_object($handler)) {
       $result = $handler();
@@ -101,12 +103,7 @@ switch ($routeInfo[0]) {
     break;
 }
 
-if (
-  !is_null($_ENV['Result']['status'])
-  && sizeof(array_filter(explode(',', $_ENV['Result']['status']), function ($path) {
-    return preg_match($path, $_ENV['Route']['path']);
-  })) > 0
-) {
+if (preg_match('/\/api\//', _get('route_vars_path'))) {
   // 输出结果
   // 结果不存在或为字符串，返回400
   if (!$result || is_string($result)) {
