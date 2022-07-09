@@ -9,6 +9,12 @@ header('Access-Control-Allow-Headers: Authorization, Content-Type, x-xsrf-token,
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . "/src/sql/index.php";
 
+/** 载入配置支持 */
+if (!defined('__ROOT_DIR__') && !@include_once 'config.inc.php') {
+  file_exists('./install.php') ? header('Location: install.php') : print('Missing Config File');
+  exit;
+}
+
 $_ENV = array_merge($_ENV, parse_ini_file(__DIR__ . "/.env", true));
 foreach ($_ENV['Environment'] ?: [] as $key => $name) {
   if ($name == $_SERVER['SERVER_NAME']) {
